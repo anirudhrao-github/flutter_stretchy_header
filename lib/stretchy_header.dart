@@ -228,7 +228,7 @@ class _StretchyHeaderBaseState extends State<StretchyHeaderBase> {
   @override
   Widget build(BuildContext context) {
     // Non-collapsible mode or positive offset in collapsible mode: header scrolls away like normal list item
-    if (!widget.headerData.collapsible || (_offset >= 0.0 && widget.headerData.collapsible)) {
+    if (!widget.headerData.collapsible && _offset >= 0.0) {
       return Container(
         color: widget.headerData.backgroundColor,
         child: NotificationListener<ScrollNotification>(
