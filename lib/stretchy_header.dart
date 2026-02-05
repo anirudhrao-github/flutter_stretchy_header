@@ -135,11 +135,16 @@ class HeaderData {
   ///If you want to blur the content when scroll. True by default
   final bool blurContent;
 
+  ///If the header should have stretchy/parallax effect when scrolling. True by default
+  ///If false, the header will behave like a normal widget and scroll away without effects
+  final bool collapsible;
+
   const HeaderData({
     required this.header,
     required this.headerHeight,
     this.highlightHeader,
     this.blurContent = true,
+    this.collapsible = true,
     this.highlightHeaderAlignment = HighlightHeaderAlignment.bottom,
     this.overlay,
     this.blurColor,
@@ -222,6 +227,45 @@ class _StretchyHeaderBaseState extends State<StretchyHeaderBase> {
 
   @override
   Widget build(BuildContext context) {
+    // Non-collapsible mode: header scrolls away like normal list item
+    if (!widget.headerData.collapsible) {
+      return Container(
+        color: widget.headerData.backgroundColor,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (widget.onRefresh != null) {
+              final currentDisplacement = notification.metrics.pixels;
+              if (currentDisplacement >= 0) {
+                canTriggerRefresh = true;
+              } else if (currentDisplacement <= -widget.displacement &&
+                  canTriggerRefresh) {
+                widget.onRefresh!();
+                canTriggerRefresh = false;
+              }
+            }
+            if (notification is ScrollUpdateNotification &&
+                notification.metrics.axis == Axis.vertical) {
+              setState(() {
+                _offset = notification.metrics.pixels;
+              });
+            }
+            return false;
+          },
+          child: widget.listBuilder(
+            context,
+            _scrollController,
+            EdgeInsets.zero,
+            BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+            SizedBox(
+              height: _headerSize,
+              child: widget.headerData.header,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Collapsible mode: header has stretchy/parallax effect
     double highlightPosition = 0.0;
     if (widget.headerData.highlightHeaderAlignment ==
         HighlightHeaderAlignment.top) {
